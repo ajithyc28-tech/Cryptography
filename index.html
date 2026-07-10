@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MemCrypt Lab</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Georgia, 'Times New Roman', serif;
+      background: #f5f0e8;
+      color: #2c2c2c;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: #2c2c2c;
+      color: #f5f0e8;
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    header h1 { font-size: 1.4rem; font-weight: normal; letter-spacing: 1px; }
+    header span { font-size: 0.8rem; color: #aaa; font-family: monospace; }
+
+    /* ── Nav ── */
+    nav {
+      background: #3d3d3d;
+      display: flex;
+      gap: 0;
+      overflow-x: auto;
+    }
+    nav button {
+      padding: 11px 24px;
+      background: none;
+      border: none;
+      color: #ccc;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-family: Georgia, serif;
+      border-bottom: 3px solid transparent;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    nav button:hover { color: #fff; background: #4a4a4a; }
+    nav button.active { color: #fff; border-bottom-color: #c8a96e; background: #2c2c2c; }
+
+    /* ── Layout ── */
+    main { max-width: 960px; margin: 0 auto; padding: 32px 24px; }
+
+    .tab { display: none; }
+    .tab.active { display: block; }
+
+    h2 { font-size: 1.3rem; margin-bottom: 6px; font-weight: normal; }
+    .sub { color: #666; font-size: 0.85rem; margin-bottom: 28px; font-family: monospace; }
+
+    /* ── Cards ── */
+    .card {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .card h3 {
+      font-size: 1rem;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .badge {
+      font-size: 0.65rem;
+      font-family: monospace;
+      background: #f0e8d5;
+      border: 1px solid #c8a96e;
+      padding: 2px 7px;
+      border-radius: 2px;
+      color: #7a5f2a;
+      letter-spacing: 0.5px;
+    }
+    .card p { font-size: 0.85rem; color: #555; margin: 8px 0 16px; line-height: 1.6; }
+
+    /* ── Form controls ── */
+    label { display: block; font-size: 0.82rem; color: #444; margin-bottom: 4px; }
+    .ctrl-row { display: flex; gap: 12px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+    .ctrl-row label { margin: 0; flex-shrink: 0; }
+
+    input[type="range"] {
+      flex: 1;
+      min-width: 100px;
+      accent-color: #c8a96e;
+    }
+    .val-label {
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: #888;
+      min-width: 80px;
+    }
+
+    select, textarea, input[type="text"] {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      background: #fafafa;
+      color: #2c2c2c;
+      margin-bottom: 12px;
+    }
+    select { width: auto; min-width: 180px; margin-bottom: 0; }
+    textarea { resize: vertical; min-height: 70px; }
+
+    /* ── Buttons ── */
+    button.btn {
+      padding: 8px 20px;
+      background: #2c2c2c;
+      color: #f5f0e8;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-family: Georgia, serif;
+      transition: background 0.15s;
+    }
+    button.btn:hover { background: #444; }
+    button.btn.secondary {
+      background: #f5f0e8;
+      color: #2c2c2c;
+      border: 1px solid #bbb;
+    }
+    button.btn.secondary:hover { background: #e8e2d8; }
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+
+    /* ── Output ── */
+    .output-box {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      font-family: monospace;
+      font-size: 0.8rem;
+      padding: 14px;
+      border-radius: 3px;
+      min-height: 50px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .output-box .ok   { color: #6dca8a; }
+    .output-box .err  { color: #e06c6c; }
+    .output-box .info { color: #9cdcfe; }
+    .output-box .warn { color: #e5c07b; }
+    .output-box .dim  { color: #666; font-size: 0.75rem; }
+
+    /* ── Attack log ── */
+    .log-panel {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      font-family: monospace;
+      font-size: 0.78rem;
+      padding: 14px;
+      border-radius: 3px;
+      height: 180px;
+      overflow-y: auto;
+      line-height: 1.7;
+      margin-top: 20px;
+    }
+    .log-panel .log-ok    { color: #6dca8a; }
+    .log-panel .log-err   { color: #e06c6c; }
+    .log-panel .log-info  { color: #9cdcfe; }
+
+    /* ── Crypto grid ── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 600px) { .two-col { grid-template-columns: 1fr; } }
+
+    /* ── Key display ── */
+    .key-box {
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 0.78rem;
+      word-break: break-all;
+      color: #333;
+      min-height: 44px;
+      margin-top: 10px;
+      margin-bottom: 6px;
+    }
+    .key-meta { font-size: 0.75rem; color: #888; font-family: monospace; }
+
+    /* ── Running state ── */
+    .card.running { border-left: 3px solid #c8a96e; }
+
+    footer {
+      text-align: center;
+      padding: 24px;
+      color: #999;
+      font-size: 0.78rem;
+      border-top: 1px solid #ddd;
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>MemCrypt Lab</h1>
+  <span>Attack Lab · Cryptographic Engine · Academic Tool</span>
+</header>
+
+<nav id="main-nav">
+  <button class="active" data-tab="attacks">Attack Lab</button>
+  <button data-tab="crypto">Crypto Engine</button>
+</nav>
+
+<main>
+
+  <!-- ── ATTACK LAB ── -->
+  <div class="tab active" id="tab-attacks">
+    <h2>Attack Laboratory</h2>
+    <p class="sub">Four memory-based attack simulations — configure parameters and run</p>
+
+    <!-- Stack Smashing -->
+    <div class="card" id="card-stack">
+      <h3>Stack Smashing <span class="badge">RETURN ADDR OVERWRITE</span></h3>
+      <p>Overflows a stack buffer to overwrite the saved return address (EIP/RIP), redirecting execution to attacker-controlled shellcode or ROP gadgets.</p>
+      <div class="ctrl-row">
+        <label>Buffer Size (B)</label>
+        <input type="range" min="8" max="256" value="64" id="ss-buf"/>
+        <span class="val-label" id="ss-buf-v">64 B</span>
+      </div>
+      <div class="ctrl-row">
+        <label>Overflow Amount (B)</label>
+        <input type="range" min="1" max="200" value="76" id="ss-over"/>
+        <span class="val-label" id="ss-over-v">76 B</span>
+      </div>
+      <button class="btn" onclick="Attacks.stackSmash()">▶ Launch Attack</button>
+      <div class="output-box" id="out-stack" style="margin-top:12px">[ Click Launch to simulate ]</div>
+    </div>
+
+    <!-- Format String -->
+    <div class="card" id="card-fmt">
+      <h3>Format String Attack <span class="badge">MEMORY READ / WRITE</span></h3>
+      <p>Passes attacker-controlled input directly to printf() as a format string. %x leaks stack values; %n writes to arbitrary addresses — enabling GOT overwrites or info leaks.</p>
+      <div class="ctrl-row">
+        <label>Stack Depth (%x count)</label>
+        <input type="range" min="1" max="20" value="8" id="fmt-depth"/>
+        <span class="val-label" id="fmt-depth-v">8</span>
+      </div>
+      <div class="ctrl-row">
+        <label>Write Target Offset</label>
+        <input type="range" min="1" max="16" value="4" id="fmt-target"/>
+        <span class="val-label" id="fmt-target-v">$4</span>
+      </div>
+      <button class="btn" onclick="Attacks.formatString()">▶ Launch Attack</button>
+      <div class="output-box" id="out-fmt" style="margin-top:12px">[ Click Launch to simulate ]</div>
+    </div>
+
+    <!-- Heap Exploitation (UAF) -->
+    <div class="card" id="card-heap">
+      <h3>Heap Exploitation (UAF) <span class="badge">USE-AFTER-FREE</span></h3>
+      <p>Allocates a chunk, frees it, then uses the stale pointer to read/write the freed memory — often exploiting tcache/fastbin to achieve arbitrary write primitives.</p>
+      <div class="ctrl-row">
+        <label>Chunk Size (B)</label>
+        <input type="range" min="8" max="256" value="64" id="uaf-size"/>
+        <span class="val-label" id="uaf-size-v">64 B</span>
+      </div>
+      <div class="ctrl-row">
+        <label>Use-after-free Delay (ms)</label>
+        <input type="range" min="0" max="500" value="100" id="uaf-delay"/>
+        <span class="val-label" id="uaf-delay-v">100 ms</span>
+      </div>
+      <button class="btn" onclick="Attacks.heapUAF()">▶ Launch Attack</button>
+      <div class="output-box" id="out-heap" style="margin-top:12px">[ Click Launch to simulate ]</div>
+    </div>
+
+    <!-- Code Injection via mprotect -->
+    <div class="card" id="card-inject">
+      <h3>Code Injection via mprotect <span class="badge">RWX ESCALATION</span></h3>
+      <p>Uses a write primitive to call mprotect() on stack/heap pages, marking them RWX (Read-Write-Execute), then injects and runs shellcode bypassing DEP/NX.</p>
+      <div class="ctrl-row">
+        <label>Target Region</label>
+        <input type="range" min="0" max="2" value="0" id="mp-region"/>
+        <span class="val-label" id="mp-region-v">Stack</span>
+      </div>
+      <div class="ctrl-row">
+        <label>RWX Region Size (KB)</label>
+        <input type="range" min="1" max="64" value="4" id="mp-size"/>
+        <span class="val-label" id="mp-size-v">4 KB</span>
+      </div>
+      <button class="btn" onclick="Attacks.codeInject()">▶ Launch Attack</button>
+      <div class="output-box" id="out-inject" style="margin-top:12px">[ Click Launch to simulate ]</div>
+    </div>
+
+    <!-- Shared log -->
+    <div class="card" style="margin-top:8px">
+      <h3>Execution Console</h3>
+      <div class="log-panel" id="attack-log">
+        <span style="color:#666">[ready] Select an attack and click Launch...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CRYPTO ENGINE ── -->
+  <div class="tab" id="tab-crypto">
+    <h2>Cryptographic Engine</h2>
+    <p class="sub">Key generation · Encrypt / Decrypt · Hash Generator</p>
+
+    <div class="two-col">
+
+      <!-- Key Generation -->
+      <div class="card">
+        <h3>Key Generation</h3>
+        <p style="margin-bottom:14px">Generate a random key for the selected algorithm.</p>
+        <label>Algorithm</label>
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;">
+          <select id="algo-select">
+            <option value="aes128">AES-128</option>
+            <option value="aes256" selected>AES-256</option>
+            <option value="rsa2048">RSA-2048 (simulated)</option>
+
+          </select>
+          <button class="btn" onclick="Crypto.generateKey()">Generate Key</button>
+        </div>
+        <div class="key-box" id="key-display">[ No key generated ]</div>
+        <div class="key-meta" id="key-meta"></div>
+      </div>
+
+      <!-- Encrypt / Decrypt -->
+      <div class="card">
+        <h3>Encrypt / Decrypt</h3>
+        <p style="margin-bottom:14px">Uses the currently generated key to encrypt or decrypt text.</p>
+        <label>Plaintext</label>
+        <textarea id="plain-input" placeholder="Enter text to encrypt...">My secret key is 0xDEADBEEF</textarea>
+        <div class="btn-row">
+          <button class="btn" onclick="Crypto.encrypt()">🔒 Encrypt</button>
+          <button class="btn secondary" onclick="Crypto.decrypt()">🔓 Decrypt</button>
+        </div>
+        <label>Output</label>
+        <div class="key-box" id="crypto-output">[ Output here ]</div>
+      </div>
+
+    </div>
+
+    <!-- Hash Generator -->
+    <div class="card">
+      <h3>Hash Generator</h3>
+      <p style="margin-bottom:14px">Generate simulated hash digests from input text. For educational demonstration.</p>
+      <label>Input text</label>
+      <textarea id="hash-input" placeholder="Enter data to hash..." style="min-height:55px">MemCrypt Lab</textarea>
+      <div class="btn-row">
+        <button class="btn" onclick="Crypto.hash('md5')">MD5</button>
+        <button class="btn" onclick="Crypto.hash('sha1')">SHA-1</button>
+        <button class="btn" onclick="Crypto.hash('sha256')">SHA-256</button>
+      </div>
+      <label>Hash Output</label>
+      <div class="key-box" id="hash-output">[ Hash here ]</div>
+    </div>
+
+  </div>
+
+</main>
+
+
+
+<script>
+// ── Tab navigation ──
+document.querySelectorAll('#main-nav button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#main-nav button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ── Slider wiring ──
+function wireSlider(id, fmt) {
+  const sl = document.getElementById(id);
+  const lbl = document.getElementById(id + '-v');
+  if (!sl || !lbl) return;
+  sl.addEventListener('input', () => { lbl.textContent = fmt(sl.value); });
+}
+wireSlider('ss-buf',    v => v + ' B');
+wireSlider('ss-over',   v => v + ' B');
+wireSlider('fmt-depth', v => String(v));
+wireSlider('fmt-target',v => '$' + v);
+wireSlider('uaf-size',   v => v + ' B');
+wireSlider('uaf-delay',  v => v + ' ms');
+wireSlider('mp-region',  v => ['Stack','Heap','BSS'][v]);
+wireSlider('mp-size',    v => v + ' KB');
+
+// ── Helpers ──
+function rnd(n) {
+  return Array.from({length:n}, () => Math.floor(Math.random()*256).toString(16).padStart(2,'0')).join('');
+}
+function hexBlock(n) {
+  return Array.from({length:n}, () => Math.floor(Math.random()*256).toString(16).padStart(2,'0')).join(' ');
+}
+function setOut(id, html) {
+  document.getElementById(id).innerHTML = html;
+}
+function log(msg, cls='log-info') {
+  const box = document.getElementById('attack-log');
+  const el = document.createElement('div');
+  el.className = cls;
+  el.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+}
+function running(cardId, on) {
+  document.getElementById(cardId).classList.toggle('running', on);
+}
+function steps(arr, delay, done) {
+  let i = 0;
+  const iv = setInterval(() => {
+    if (i < arr.length) { log(arr[i], i >= arr.length - 2 ? 'log-err' : 'log-info'); i++; }
+    else { clearInterval(iv); done(); }
+  }, delay);
+}
+
+// ── Attacks ──
+const Attacks = {
+  stackSmash() {
+    const buf  = +document.getElementById('ss-buf').value;
+    const over = +document.getElementById('ss-over').value;
+    running('card-stack', true);
+    const ret = '0x' + (0x41414100 + Math.floor(Math.random()*255)).toString(16);
+    steps([
+      `STACK SMASH: Buffer = ${buf} B allocated on stack`,
+      `STACK SMASH: Sending ${buf+over} B payload via gets()...`,
+      `STACK SMASH: Overflowing ${over} B past buffer boundary`,
+      `STACK SMASH: Overwriting saved EBP at offset +${buf}`,
+      `STACK SMASH: Overwriting return address at +${buf+4} → ${ret}`,
+      `STACK SMASH: Function returns — EIP hijacked!`
+    ], 390, () => {
+      setOut('out-stack', `<span class="err">⚠ Stack smashed — EIP = ${ret}</span>\n<span class="dim">Overflow: ${over} B past ${buf} B buffer</span>\n<span class="ok">Fix: use fgets(), enable -fstack-protector, ASLR</span>`);
+      running('card-stack', false);
+    });
+    log(`Stack Smash launched — ${buf}B buf, ${over}B overflow`);
+  },
+
+  formatString() {
+    const depth  = +document.getElementById('fmt-depth').value;
+    const target = +document.getElementById('fmt-target').value;
+    running('card-fmt', true);
+    const leaked  = Array.from({length:depth}, () => hexBlock(2)).join(' ');
+    const gotAddr = '0x' + (0x08049100 + target*4).toString(16);
+    steps([
+      `FMT STRING: Vulnerable call: printf(user_input)`,
+      `FMT STRING: Injecting "%${depth}$x.%${depth}$x..." to read stack`,
+      `FMT STRING: Leaked ${depth*4} bytes: ${leaked.substring(0,28)}...`,
+      `FMT STRING: Found return address in leak`,
+      `FMT STRING: Crafting %n payload → write to GOT[${target}] @ ${gotAddr}`,
+      `FMT STRING: GOT entry overwritten — control flow hijacked`
+    ], 430, () => {
+      setOut('out-fmt', `<span class="info">⚠ Format string exploited!</span>\n<span class="dim">Leaked: ${leaked.substring(0,36)}...</span>\n<span class="dim">GOT[${target}] @ ${gotAddr} → overwritten</span>\n<span class="ok">Fix: use printf("%s", input) — never pass input as format</span>`);
+      running('card-fmt', false);
+    });
+    log(`Format String: ${depth} stack reads + GOT write at offset ${target}`);
+  },
+
+  heapUAF() {
+    const chunkSz = +document.getElementById('uaf-size').value;
+    const delay   = +document.getElementById('uaf-delay').value;
+    running('card-heap', true);
+    const heapAddr = '0x' + (0x55500000 + Math.floor(Math.random()*0xffff)).toString(16);
+    steps([
+      `UAF: malloc(${chunkSz}) → chunk @ ${heapAddr}`,
+      `UAF: Writing object data to chunk...`,
+      `UAF: free(ptr) — chunk returned to tcache`,
+      delay > 0 ? `UAF: Sleeping ${delay}ms (race window)...` : `UAF: Immediately reusing freed chunk`,
+      `UAF: malloc(${chunkSz}) → same chunk @ ${heapAddr} (tcache hit)`,
+      `UAF: Overwriting vtable pointer in reused chunk`,
+      `UAF: Virtual call → attacker's function pointer — arbitrary code exec`
+    ], 370, () => {
+      setOut('out-heap', `<span class="err">⚠ Use-After-Free exploited!</span>\n<span class="dim">Chunk: ${heapAddr} (${chunkSz} B)</span>\n<span class="dim">Vtable overwritten → arbitrary code execution</span>\n<span class="ok">Fix: NULL pointer after free, use smart pointers, heap quarantine</span>`);
+      running('card-heap', false);
+    });
+    log(`Heap UAF: ${chunkSz}B chunk @ ${heapAddr} reused after ${delay}ms`);
+  },
+
+  codeInject() {
+    const regionIdx = +document.getElementById('mp-region').value;
+    const sizekb    = +document.getElementById('mp-size').value;
+    const regions   = ['Stack','Heap','BSS'];
+    const region    = regions[regionIdx];
+    const baseAddr  = {Stack:'0x7fff0000', Heap:'0x55500000', BSS:'0x08049000'}[region];
+    running('card-inject', true);
+    steps([
+      `CODE INJECT: Locating ${region} base address via info leak`,
+      `CODE INJECT: ${region} base @ ${baseAddr}`,
+      `CODE INJECT: Calling mprotect(${baseAddr}, ${sizekb*1024}, PROT_READ|PROT_WRITE|PROT_EXEC)`,
+      `CODE INJECT: ${region} region (${sizekb} KB) is now RWX — NX/DEP bypassed!`,
+      `CODE INJECT: Writing shellcode to ${baseAddr}`,
+      `CODE INJECT: Returning to ${baseAddr} — shellcode executes!`
+    ], 420, () => {
+      setOut('out-inject', `<span class="warn">⚠ DEP/NX bypassed via mprotect!</span>\n<span class="dim">Region: ${region} @ ${baseAddr} (${sizekb} KB RWX)</span>\n<span class="dim">Shellcode injected and executed</span>\n<span class="ok">Fix: SMEP/SMAP, seccomp filter on mprotect, W^X enforcement at kernel</span>`);
+      running('card-inject', false);
+    });
+    log(`Code Inject: mprotect() on ${region} → RWX → shellcode exec`);
+  }
+};
+window.Attacks = Attacks;
+
+// ── Crypto ──
+const CState = { key: null, algo: 'aes256', rawKey: null, iv: null };
+
+const Crypto = {
+  async generateKey() {
+    const algo = document.getElementById('algo-select').value;
+    CState.algo = algo;
+    const keyDisplay = document.getElementById('key-display');
+    const keyMeta    = document.getElementById('key-meta');
+
+    try {
+      if (algo === 'aes128' || algo === 'aes256') {
+        const bits = algo === 'aes128' ? 128 : 256;
+        const cryptoKey = await window.crypto.subtle.generateKey(
+          { name: 'AES-GCM', length: bits },
+          true, ['encrypt', 'decrypt']
+        );
+        const raw = await window.crypto.subtle.exportKey('raw', cryptoKey);
+        const hex = Array.from(new Uint8Array(raw)).map(b => b.toString(16).padStart(2,'0')).join('');
+        CState.rawKey  = cryptoKey;
+        CState.key     = hex;
+        keyDisplay.textContent = hex;
+        keyMeta.textContent    = (algo === 'aes128' ? 'AES-128' : 'AES-256') + '-GCM — ' + bits + '-bit key (Web Crypto API)';
+
+      } else if (algo === 'rsa2048') {
+        keyDisplay.textContent = 'Generating RSA-2048 key pair...';
+        const kp = await window.crypto.subtle.generateKey(
+          { name: 'RSA-OAEP', modulusLength: 2048, publicExponent: new Uint8Array([1,0,1]), hash: 'SHA-256' },
+          true, ['encrypt', 'decrypt']
+        );
+        const pubRaw = await window.crypto.subtle.exportKey('spki', kp.publicKey);
+        const pubHex = Array.from(new Uint8Array(pubRaw)).map(b => b.toString(16).padStart(2,'0')).join('');
+        CState.rawKey = kp;
+        CState.key    = pubHex;
+        keyDisplay.textContent = pubHex.substring(0, 128) + '...';
+        keyMeta.textContent    = 'RSA-2048-OAEP / SHA-256 — Public key shown (truncated)';
+      }
+    } catch (e) {
+      keyDisplay.textContent = '⚠ Key generation failed: ' + e.message;
+    }
+  },
+
+  async encrypt() {
+    const plain = document.getElementById('plain-input').value;
+    const out   = document.getElementById('crypto-output');
+    if (!plain)         { out.textContent = '⚠ Enter text to encrypt.'; return; }
+    if (!CState.rawKey) { out.textContent = '⚠ Generate a key first!';  return; }
+
+    try {
+      const enc  = new TextEncoder();
+      const data = enc.encode(plain);
+
+      if (CState.algo === 'aes128' || CState.algo === 'aes256') {
+        const iv         = window.crypto.getRandomValues(new Uint8Array(12));
+        CState.iv        = iv;
+        const cipherBuf  = await window.crypto.subtle.encrypt({ name: 'AES-GCM', iv }, CState.rawKey, data);
+        const cipherHex  = Array.from(new Uint8Array(cipherBuf)).map(b => b.toString(16).padStart(2,'0')).join('');
+        const ivHex      = Array.from(iv).map(b => b.toString(16).padStart(2,'0')).join('');
+        CState.lastCipher = cipherHex;
+        CState.lastIV     = ivHex;
+        out.textContent   = 'IV (96-bit):  ' + ivHex + '\n\nCiphertext:\n' + cipherHex;
+
+      } else if (CState.algo === 'rsa2048') {
+        const cipherBuf = await window.crypto.subtle.encrypt({ name: 'RSA-OAEP' }, CState.rawKey.publicKey, data);
+        const cipherHex = Array.from(new Uint8Array(cipherBuf)).map(b => b.toString(16).padStart(2,'0')).join('');
+        CState.lastCipher = cipherHex;
+        out.textContent   = 'RSA-OAEP Ciphertext:\n' + cipherHex;
+      }
+    } catch (e) {
+      out.textContent = '⚠ Encryption failed: ' + e.message;
+    }
+  },
+
+  async decrypt() {
+    const out = document.getElementById('crypto-output');
+    if (!CState.lastCipher) { out.textContent = '⚠ Encrypt something first!'; return; }
+    if (!CState.rawKey)     { out.textContent = '⚠ No key loaded!';            return; }
+
+    try {
+      const cipherBytes = new Uint8Array(CState.lastCipher.match(/.{1,2}/g).map(b => parseInt(b,16)));
+
+      if (CState.algo === 'aes128' || CState.algo === 'aes256') {
+        const iv         = new Uint8Array(CState.lastIV.match(/.{1,2}/g).map(b => parseInt(b,16)));
+        const plainBuf   = await window.crypto.subtle.decrypt({ name: 'AES-GCM', iv }, CState.rawKey, cipherBytes);
+        const plainText  = new TextDecoder().decode(plainBuf);
+        out.textContent  = '✓ Decrypted:\n\n' + plainText;
+
+      } else if (CState.algo === 'rsa2048') {
+        const plainBuf  = await window.crypto.subtle.decrypt({ name: 'RSA-OAEP' }, CState.rawKey.privateKey, cipherBytes);
+        const plainText = new TextDecoder().decode(plainBuf);
+        out.textContent = '✓ Decrypted:\n\n' + plainText;
+      }
+    } catch (e) {
+      out.textContent = '⚠ Decryption failed: ' + e.message;
+    }
+  },
+
+  async hash(type) {
+    const input = document.getElementById('hash-input').value;
+    const out   = document.getElementById('hash-output');
+    const algoMap = { md5: null, sha1: 'SHA-1', sha256: 'SHA-256' };
+
+    if (type === 'md5') {
+      // MD5 not in Web Crypto — use a pure-JS implementation
+      out.textContent = 'MD5 (128-bit)  ⚠ deprecated\n\n' + md5(input);
+      return;
+    }
+
+    try {
+      const enc    = new TextEncoder();
+      const buf    = await window.crypto.subtle.digest(algoMap[type], enc.encode(input));
+      const hex    = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+      const labels = { sha1: 'SHA-1 (160-bit)  ⚠ deprecated', sha256: 'SHA-256 (256-bit)  ✓ recommended' };
+      out.textContent = labels[type] + '\n\n' + hex;
+    } catch (e) {
+      out.textContent = '⚠ Hash failed: ' + e.message;
+    }
+  }
+};
+window.Crypto = Crypto;
+
+// ── Pure-JS MD5 (RFC 1321) ──
+function md5(s) {
+  function safeAdd(x,y){var lsw=(x&0xffff)+(y&0xffff);return(((x>>16)+(y>>16)+(lsw>>16))<<16)|(lsw&0xffff);}
+  function bitRotateLeft(n,c){return(n<<c)|(n>>>(32-c));}
+  function md5cmn(q,a,b,x,s,t){return safeAdd(bitRotateLeft(safeAdd(safeAdd(a,q),safeAdd(x,t)),s),b);}
+  function md5ff(a,b,c,d,x,s,t){return md5cmn((b&c)|((~b)&d),a,b,x,s,t);}
+  function md5gg(a,b,c,d,x,s,t){return md5cmn((b&d)|(c&(~d)),a,b,x,s,t);}
+  function md5hh(a,b,c,d,x,s,t){return md5cmn(b^c^d,a,b,x,s,t);}
+  function md5ii(a,b,c,d,x,s,t){return md5cmn(c^(b|(~d)),a,b,x,s,t);}
+  var m=[];for(var i=0;i<s.length;i++){m[i>>2]|=(s.charCodeAt(i)&0xff)<<((i%4)*8);}
+  m[s.length>>2]|=0x80<<((s.length%4)*8);m[(((s.length+8)>>6)<<4)+14]=s.length*8;
+  var a=1732584193,b=-271733879,c=-1732584194,d=271733878;
+  for(var i2=0;i2<m.length;i2+=16){
+    var oA=a,oB=b,oC=c,oD=d;
+    a=md5ff(a,b,c,d,m[i2+0],7,-680876936);d=md5ff(d,a,b,c,m[i2+1],12,-389564586);
+    c=md5ff(c,d,a,b,m[i2+2],17,606105819);b=md5ff(b,c,d,a,m[i2+3],22,-1044525330);
+    a=md5ff(a,b,c,d,m[i2+4],7,-176418897);d=md5ff(d,a,b,c,m[i2+5],12,1200080426);
+    c=md5ff(c,d,a,b,m[i2+6],17,-1473231341);b=md5ff(b,c,d,a,m[i2+7],22,-45705983);
+    a=md5ff(a,b,c,d,m[i2+8],7,1770035416);d=md5ff(d,a,b,c,m[i2+9],12,-1958414417);
+    c=md5ff(c,d,a,b,m[i2+10],17,-42063);b=md5ff(b,c,d,a,m[i2+11],22,-1990404162);
+    a=md5ff(a,b,c,d,m[i2+12],7,1804603682);d=md5ff(d,a,b,c,m[i2+13],12,-40341101);
+    c=md5ff(c,d,a,b,m[i2+14],17,-1502002290);b=md5ff(b,c,d,a,m[i2+15],22,1236535329);
+    a=md5gg(a,b,c,d,m[i2+1],5,-165796510);d=md5gg(d,a,b,c,m[i2+6],9,-1069501632);
+    c=md5gg(c,d,a,b,m[i2+11],14,643717713);b=md5gg(b,c,d,a,m[i2+0],20,-373897302);
+    a=md5gg(a,b,c,d,m[i2+5],5,-701558691);d=md5gg(d,a,b,c,m[i2+10],9,38016083);
+    c=md5gg(c,d,a,b,m[i2+15],14,-660478335);b=md5gg(b,c,d,a,m[i2+4],20,-405537848);
+    a=md5gg(a,b,c,d,m[i2+9],5,568446438);d=md5gg(d,a,b,c,m[i2+14],9,-1019803690);
+    c=md5gg(c,d,a,b,m[i2+3],14,-187363961);b=md5gg(b,c,d,a,m[i2+8],20,1163531501);
+    a=md5gg(a,b,c,d,m[i2+13],5,-1444681467);d=md5gg(d,a,b,c,m[i2+2],9,-51403784);
+    c=md5gg(c,d,a,b,m[i2+7],14,1735328473);b=md5gg(b,c,d,a,m[i2+12],20,-1926607734);
+    a=md5hh(a,b,c,d,m[i2+5],4,-378558);d=md5hh(d,a,b,c,m[i2+8],11,-2022574463);
+    c=md5hh(c,d,a,b,m[i2+11],16,1839030562);b=md5hh(b,c,d,a,m[i2+14],23,-35309556);
+    a=md5hh(a,b,c,d,m[i2+1],4,-1530992060);d=md5hh(d,a,b,c,m[i2+4],11,1272893353);
+    c=md5hh(c,d,a,b,m[i2+7],16,-155497632);b=md5hh(b,c,d,a,m[i2+10],23,-1094730640);
+    a=md5hh(a,b,c,d,m[i2+13],4,681279174);d=md5hh(d,a,b,c,m[i2+0],11,-358537222);
+    c=md5hh(c,d,a,b,m[i2+3],16,-722521979);b=md5hh(b,c,d,a,m[i2+6],23,76029189);
+    a=md5hh(a,b,c,d,m[i2+9],4,-640364487);d=md5hh(d,a,b,c,m[i2+12],11,-421815835);
+    c=md5hh(c,d,a,b,m[i2+15],16,530742520);b=md5hh(b,c,d,a,m[i2+2],23,-995338651);
+    a=md5ii(a,b,c,d,m[i2+0],6,-198630844);d=md5ii(d,a,b,c,m[i2+7],10,1126891415);
+    c=md5ii(c,d,a,b,m[i2+14],15,-1416354905);b=md5ii(b,c,d,a,m[i2+5],21,-57434055);
+    a=md5ii(a,b,c,d,m[i2+12],6,1700485571);d=md5ii(d,a,b,c,m[i2+3],10,-1894986606);
+    c=md5ii(c,d,a,b,m[i2+10],15,-1051523);b=md5ii(b,c,d,a,m[i2+1],21,-2054922799);
+    a=md5ii(a,b,c,d,m[i2+8],6,1873313359);d=md5ii(d,a,b,c,m[i2+15],10,-30611744);
+    c=md5ii(c,d,a,b,m[i2+6],15,-1560198380);b=md5ii(b,c,d,a,m[i2+13],21,1309151649);
+    a=md5ii(a,b,c,d,m[i2+4],6,-145523070);d=md5ii(d,a,b,c,m[i2+11],10,-1120210379);
+    c=md5ii(c,d,a,b,m[i2+2],15,718787259);b=md5ii(b,c,d,a,m[i2+9],21,-343485551);
+    a=safeAdd(a,oA);b=safeAdd(b,oB);c=safeAdd(c,oC);d=safeAdd(d,oD);
+  }
+  return [a,b,c,d].map(n=>(n>>>0).toString(16).padStart(8,'0').match(/../g).reverse().join('')).join('');
+}
+</script>
+
+</body>
+</html>
